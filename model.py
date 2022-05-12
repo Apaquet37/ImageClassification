@@ -5,21 +5,23 @@ from tensorflow.keras import layers
 
 import os
 
-num_skipped = 0
-for folder_name in ("Button", "Switch"):
-    folder_path = os.path.join("Images", folder_name)
-    for fname in os.listdir(folder_path):
-        fpath = os.path.join(folder_path, fname)
-        try:
-            fobj = open(fpath, "rb")
-            is_jfif = tf.compat.as_bytes("JFIF") in fobj.peek(10)
-        finally:
-            fobj.close()
+input_shape = (32,)
 
-        if not is_jfif:
-            num_skipped += 1
+num_skipped = 0
+#for folder_name in ("Button", "Switch"):
+    #folder_path = os.path.join("Images", folder_name)
+    #for fname in os.listdir(folder_path):
+        #fpath = os.path.join(folder_path, fname)
+        #try:
+            #fobj = open(fpath, "rb")
+            #is_jfif = tf.compat.as_bytes("JFIF") in fobj.peek(10)
+        #finally:
+            #fobj.close()
+
+        #if not is_jfif:
+            #num_skipped += 1
             # Delete corrupted image
-            os.remove(fpath)
+            #os.remove(fpath)
 
 print("Deleted %d images" % num_skipped)
 
@@ -45,15 +47,15 @@ val_ds = tf.keras.preprocessing.image_dataset_from_directory(
 )
 
 #visualize data - is this necessary?
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
-plt.figure(figsize=(10, 10))
-for images, labels in train_ds.take(1):
-    for i in range(9):
-        ax = plt.subplot(3, 3, i + 1)
-        plt.imshow(images[i].numpy().astype("uint8"))
-        plt.title(int(labels[i]))
-        plt.axis("off")
+#plt.figure(figsize=(10, 10))
+#for images, labels in train_ds.take(1):
+    #for i in range(9):
+        #ax = plt.subplot(3, 3, i + 1)
+        #plt.imshow(images[i].numpy().astype("uint8"))
+        #plt.title(int(labels[i]))
+        #plt.axis("off")
         
 #data augmentation
 data_augmentation = keras.Sequential(
@@ -64,15 +66,16 @@ data_augmentation = keras.Sequential(
 )
 
 #visualizing augmentation - is this necessary?
-plt.figure(figsize=(10, 10))
-for images, _ in train_ds.take(1):
-    for i in range(9):
-        augmented_images = data_augmentation(images)
-        ax = plt.subplot(3, 3, i + 1)
-        plt.imshow(augmented_images[0].numpy().astype("uint8"))
-        plt.axis("off")
+#plt.figure(figsize=(10, 10))
+#for images, _ in train_ds.take(1):
+    #for i in range(9):
+        #augmented_images = data_augmentation(images)
+        #ax = plt.subplot(3, 3, i + 1)
+        #plt.imshow(augmented_images[0].numpy().astype("uint8"))
+        #plt.axis("off")
         
 #standardize the data (this is being done as part of the model, with cpu it might be better to do it beforehand)
+#inputs = keras.Input(shape=input_shape)
 inputs = keras.Input(shape=input_shape)
 x = data_augmentation(inputs)
 x = layers.Rescaling(1./255)(x)
