@@ -1,4 +1,4 @@
-import tensorflow as tf
+import tensorflow as tf #This set of lines is standard syntax for importing ML libraries
 from tensorflow import keras
 from tensorflow.keras import layers
 
@@ -7,37 +7,18 @@ import os
 
 input_shape = (32,)
 
-num_skipped = 0
-#for folder_name in ("Button", "Switch"):
-    #folder_path = os.path.join("Images", folder_name)
-    #for fname in os.listdir(folder_path):
-        #fpath = os.path.join(folder_path, fname)
-        #try:
-            #fobj = open(fpath, "rb")
-            #is_jfif = tf.compat.as_bytes("JFIF") in fobj.peek(10)
-        #finally:
-            #fobj.close()
+image_size = (180, 180) #The image size, this could be changed to something smaller or bigger
+batch_size = 32 #Run through 32 images at a time
 
-        #if not is_jfif:
-            #num_skipped += 1
-            # Delete corrupted image
-            #os.remove(fpath)
-
-print("Deleted %d images" % num_skipped)
-
-
-image_size = (180, 180) #could change to 32x32? that's the cifar size
-batch_size = 32
-
-train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    "Images",
-    validation_split=0.2,
-    subset="training",
-    seed=713,
-    image_size=image_size,
+train_ds = tf.keras.preprocessing.image_dataset_from_directory( #Importing the images from the computer
+    "Images", #Name of directory that contains the images on the computer, I have two folders within it, one named Button and one named Switch
+    validation_split=0.2, #20% of the images will be saved for validation, 80% are used for training
+    subset="training", #Naming this 80% the training dataset
+    seed=713, #A random number, standard throughout the project that ensures that the random way the data splits is the same way each time
+    image_size=image_size, #Setting image and batch size
     batch_size=batch_size,
 )
-val_ds = tf.keras.preprocessing.image_dataset_from_directory(
+val_ds = tf.keras.preprocessing.image_dataset_from_directory( #Same process but for validation data
     "Images",
     validation_split=0.2,
     subset="validation",
@@ -46,39 +27,20 @@ val_ds = tf.keras.preprocessing.image_dataset_from_directory(
     batch_size=batch_size,
 )
 
-#visualize data - is this necessary?
-#import matplotlib.pyplot as plt
-
-#plt.figure(figsize=(10, 10))
-#for images, labels in train_ds.take(1):
-    #for i in range(9):
-        #ax = plt.subplot(3, 3, i + 1)
-        #plt.imshow(images[i].numpy().astype("uint8"))
-        #plt.title(int(labels[i]))
-        #plt.axis("off")
         
-#data augmentation
+#data augmentation - transformations made to the images that still preserves what they are
 data_augmentation = keras.Sequential(
     [
-        layers.RandomFlip("horizontal"),
-        layers.RandomRotation(0.1),
+        layers.RandomFlip("horizontal"), #A horizontal flip - a dog is still a dog, whether you flip it horizontally or not
+        layers.RandomRotation(0.1), #Random rotations to add variance to data
     ]
 )
 
-#visualizing augmentation - is this necessary?
-#plt.figure(figsize=(10, 10))
-#for images, _ in train_ds.take(1):
-    #for i in range(9):
-        #augmented_images = data_augmentation(images)
-        #ax = plt.subplot(3, 3, i + 1)
-        #plt.imshow(augmented_images[0].numpy().astype("uint8"))
-        #plt.axis("off")
         
 #standardize the data (this is being done as part of the model, with cpu it might be better to do it beforehand)
-#inputs = keras.Input(shape=input_shape)
 inputs = keras.Input(shape=input_shape)
 x = data_augmentation(inputs)
-x = layers.Rescaling(1./255)(x)
+x = layers.Rescaling(1./255)(x) #Rescaling the RGB values so they're from 0-1 instead of 0-255
 
 train_ds = train_ds.prefetch(buffer_size=32)
 val_ds = val_ds.prefetch(buffer_size=32)
@@ -86,7 +48,7 @@ val_ds = val_ds.prefetch(buffer_size=32)
 
 #Making the Model
 
-def make_model(input_shape, num_classes):
+def make_model(input_shape, num_classes): #Most ML models are just blocks of code repeating to form layers
     inputs = keras.Input(shape=input_shape)
     # Image augmentation block
     x = data_augmentation(inputs)
@@ -125,16 +87,12 @@ def make_model(input_shape, num_classes):
     x = layers.BatchNormalization()(x)
     x = layers.Activation("relu")(x)
 
-    x = layers.GlobalAveragePooling2D()(x)
-    if num_classes == 2: #once I decide for sure how many classes I'll have this can come out, but the syntax is useful while still in development
-        activation = "sigmoid" #sigmoid returns a zero or one
-        units = 1
-    else:
-        activation = "softmax" #softmax returns a probability for each class
-        units = num_classes
+    x = layers.GlobalAveragePooling2D()(x) 
+    activation = "sigmoid" #Setting the type of dense activation layer - sigmoid returns a zero or one
+    units = 1
 
     x = layers.Dropout(0.5)(x)
-    outputs = layers.Dense(units, activation=activation)(x)
+    outputs = layers.Dense(units, activation=activation)(x) #Finally making a decision
     return keras.Model(inputs, outputs)
 
 
